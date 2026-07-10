@@ -1,0 +1,62 @@
+replicaCount: 2
+
+image:
+  repository: 695057736078.dkr.ecr.ap-south-1.amazonaws.com/cloudops-platform
+  tag: latest
+  pullPolicy: IfNotPresent
+
+env:
+  APP_VERSION: ""
+  ENVIRONMENT: production
+  AWS_REGION: ap-south-1
+  CLUSTER_NAME: project6-eks
+  LOG_LEVEL: INFO
+  REFRESH_INTERVAL: "30"
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 5000
+
+serviceAccount:
+  create: true
+  name: cloudops-dashboard
+  automount: true
+  annotations: {}
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+
+ingress:
+  enabled: true
+
+  className: alb
+
+  host: ""
+
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+
+    alb.ingress.kubernetes.io/target-type: ip
+
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80

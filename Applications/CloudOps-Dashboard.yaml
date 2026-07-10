@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloudops-dashboard
+  namespace: argocd # Must match the namespace where Argo CD is installed
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io # Deletes K8s resources when the app is deleted
+spec:
+  project: default # Argo CD project name
+
+  # Source: Where the target manifests live
+  source:
+    repoURL: https://github.com/Dhusinth/Project6-CloudOps-GitOps.git
+    targetRevision: main # Branch, tag, or commit hash
+    path: Helm/CloudOps-Dashboard # Folder path containing your YAML manifests
+
+  # Destination: Where to deploy the manifests
+  destination:
+    server: 'https://kubernetes.default.svc' # Local cluster URL
+    namespace: cloudops # Target namespace for the deployment
+
+  # Sync Policy: Configures automation settings
+  syncPolicy:
+    automated:
+      prune: true # Automatically deletes resources removed from Git
+      selfHeal: true # Automatically overwrites changes made manually to the cluster
+    syncOptions:
+      - CreateNamespace=true # Automatically creates the target namespace if missing
+      - ServerSideApply=true
