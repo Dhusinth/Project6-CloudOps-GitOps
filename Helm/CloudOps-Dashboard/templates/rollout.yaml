@@ -14,11 +14,13 @@ spec:
       stableService: cloudops-dashboard-stable
       canaryService: cloudops-dashboard-canary
 
+  {{- if .Values.ingress.enabled }}
       trafficRouting:
         alb:
           ingress: cloudops-dashboard
           rootService: cloudops-dashboard
           servicePort: {{ .Values.service.port }}
+  {{- end }}
 
       analysis:
         templates:
