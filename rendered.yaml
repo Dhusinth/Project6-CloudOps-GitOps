@@ -1,0 +1,362 @@
+---
+# Source: cloudops-dashboard/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+
+metadata:
+  name: cloudops-dashboard
+
+automountServiceAccountToken: true
+---
+# Source: cloudops-dashboard/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+
+metadata:
+  name: cloudops-dashboard
+
+rules:
+- apiGroups: [""]
+  resources:
+    - pods
+    - services
+    - namespaces
+    - nodes
+    - configmaps
+    - events
+    - persistentvolumeclaims
+    - persistentvolumes
+    - secrets
+  verbs: ["get", "list", "watch"]
+
+- apiGroups: ["apps"]
+  resources:
+    - deployments
+    - replicasets
+    - statefulsets
+    - daemonsets
+  verbs: ["get", "list", "watch"]
+
+- apiGroups: ["batch"]
+  resources:
+    - jobs
+    - cronjobs
+  verbs: ["get", "list", "watch"]
+
+- apiGroups: ["networking.k8s.io"]
+  resources:
+    - ingresses
+    - networkpolicies
+  verbs: ["get", "list", "watch"]
+
+- apiGroups: ["storage.k8s.io"]
+  resources:
+    - storageclasses
+  verbs: ["get", "list", "watch"]
+
+- apiGroups: ["argoproj.io"]
+  resources:
+    - rollouts
+    - analyses
+    - experiments
+  verbs: ["get", "list", "watch"]
+
+- apiGroups: ["metrics.k8s.io"]
+  resources:
+    - pods
+    - nodes
+  verbs: ["get", "list", "watch"]
+---
+# Source: cloudops-dashboard/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+
+metadata:
+  name: cloudops-dashboard
+
+subjects:
+  - kind: ServiceAccount
+    name: cloudops-dashboard
+    namespace: default
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloudops-dashboard
+---
+# Source: cloudops-dashboard/templates/service-canary.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudops-dashboard-canary
+spec:
+  type: ClusterIP
+  selector:
+    app: cloudops-dashboard
+  ports:
+    - name: http
+      port: 80
+      targetPort: 5000
+      protocol: TCP
+---
+# Source: cloudops-dashboard/templates/service-stable.yaml
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: cloudops-dashboard-stable
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: cloudops-dashboard
+
+  ports:
+    - name: http
+      port: 80
+      targetPort: 5000
+      protocol: TCP
+---
+# Source: cloudops-dashboard/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudops-dashboard
+  labels:
+    app: cloudops-dashboard
+spec:
+  type: ClusterIP
+  selector:
+    app: cloudops-dashboard
+  ports:
+    - name: http
+      port: 80
+      targetPort: 5000
+      protocol: TCP
+---
+# Source: cloudops-dashboard/templates/hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+
+metadata:
+  name: cloudops-dashboard
+
+spec:
+  scaleTargetRef:
+    apiVersion: argoproj.io/v1alpha1
+    kind: Rollout
+    name: cloudops-dashboard
+
+  minReplicas: 2
+  maxReplicas: 10
+
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+---
+# Source: cloudops-dashboard/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: cloudops-dashboard
+
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: "/health"
+    alb.ingress.kubernetes.io/listen-ports: "[{\"HTTP\":80}]"
+    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/target-type: "ip"
+
+spec:
+  ingressClassName: alb
+
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cloudops-dashboard
+                port:
+                  number: 80
+---
+# Source: cloudops-dashboard/templates/analysis-template.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+
+metadata:
+  name: cloudops-success-rate
+
+spec:
+  metrics:
+    - name: success-rate
+
+      interval: 30s
+
+      successCondition: result[0] >= 0.95
+
+      failureLimit: 3
+
+      provider:
+        prometheus:
+          address: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+
+          query: |
+            sum(
+              rate(
+                cloudops_http_requests_total{status!~"5.."}[1m]
+              )
+            )
+            /
+            sum(
+              rate(
+                cloudops_http_requests_total[1m]
+              )
+            )
+---
+# Source: cloudops-dashboard/templates/rollout.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+
+metadata:
+  name: cloudops-dashboard
+
+spec:
+  replicas: 2
+
+  revisionHistoryLimit: 5
+
+  strategy:
+    canary:
+      stableService: cloudops-dashboard-stable
+      canaryService: cloudops-dashboard-canary
+      trafficRouting:
+        alb:
+          ingress: cloudops-dashboard
+          rootService: cloudops-dashboard
+          servicePort: 80
+
+      analysis:
+        templates:
+          - templateName: cloudops-success-rate
+
+      steps:
+        - setWeight: 20
+        - pause:
+            duration: 30s
+
+        - setWeight: 50
+        - pause:
+            duration: 60s
+
+        - setWeight: 100
+
+  selector:
+    matchLabels:
+      app: cloudops-dashboard
+
+  template:
+    metadata:
+      labels:
+        app: cloudops-dashboard
+
+    spec:
+      serviceAccountName: cloudops-dashboard
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+
+      containers:
+        - name: cloudops-dashboard
+
+          image: "dhusinth123/cloudops-dashboard:latest"
+          imagePullPolicy: Always
+
+          securityContext:
+            allowPrivilegeEscalation: false
+
+          ports:
+            - containerPort: 5000
+
+          env:
+            - name: APP_VERSION
+              value: ""
+
+            - name: ENVIRONMENT
+              value: "production"
+
+            - name: AWS_REGION
+              value: "ap-south-1"
+
+            - name: CLUSTER_NAME
+              value: "project6-dev"
+
+            - name: LOG_LEVEL
+              value: "INFO"
+
+            - name: REFRESH_INTERVAL
+              value: "30"
+
+            - name: K8S_MODE
+              value: "incluster"
+
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            failureThreshold: 30
+            periodSeconds: 5
+---
+# Source: cloudops-dashboard/templates/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: cloudops-dashboard
+
+spec:
+  selector:
+    matchLabels:
+      app: cloudops-dashboard
+
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
