@@ -1,15 +1,15 @@
 replicaCount: 2
 
 image:
-  repository: 695057736078.dkr.ecr.ap-south-1.amazonaws.com/cloudops-platform
+  repository: dhusinth123/cloudops-dashboard
   tag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 env:
   APP_VERSION: ""
   ENVIRONMENT: production
   AWS_REGION: ap-south-1
-  CLUSTER_NAME: project6-eks
+  CLUSTER_NAME: project6-dev
   LOG_LEVEL: INFO
   REFRESH_INTERVAL: "30"
 

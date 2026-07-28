@@ -1,0 +1,113 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+
+metadata:
+  name: cloudops-dashboard
+
+spec:
+  replicas: {{ .Values.replicaCount }}
+
+  revisionHistoryLimit: 5
+
+  strategy:
+    canary:
+      stableService: cloudops-dashboard-stable
+      canaryService: cloudops-dashboard-canary
+
+      trafficRouting:
+        alb:
+          ingress: cloudops-dashboard
+          rootService: cloudops-dashboard
+          servicePort: {{ .Values.service.port }}
+
+      analysis:
+        templates:
+          - templateName: cloudops-success-rate
+
+      steps:
+        - setWeight: 20
+        - pause:
+            duration: 30s
+
+        - setWeight: 50
+        - pause:
+            duration: 60s
+
+        - setWeight: 100
+
+  selector:
+    matchLabels:
+      app: cloudops-dashboard
+
+  template:
+    metadata:
+      labels:
+        app: cloudops-dashboard
+
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+
+      securityContext:
+        runAsNonRoot: {{ .Values.securityContext.runAsNonRoot }}
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+
+      containers:
+        - name: cloudops-dashboard
+
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          securityContext:
+            allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
+
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+
+          env:
+            - name: APP_VERSION
+              value: {{ .Values.env.APP_VERSION | quote }}
+
+            - name: ENVIRONMENT
+              value: {{ .Values.env.ENVIRONMENT | quote }}
+
+            - name: AWS_REGION
+              value: {{ .Values.env.AWS_REGION | quote }}
+
+            - name: CLUSTER_NAME
+              value: {{ .Values.env.CLUSTER_NAME | quote }}
+
+            - name: LOG_LEVEL
+              value: {{ .Values.env.LOG_LEVEL | quote }}
+
+            - name: REFRESH_INTERVAL
+              value: {{ .Values.env.REFRESH_INTERVAL | quote }}
+
+          resources:
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.service.targetPort }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.service.targetPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+
+          startupProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.service.targetPort }}
+            failureThreshold: 30
+            periodSeconds: 5

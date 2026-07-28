@@ -2,20 +2,20 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 
 metadata:
-  name: argo-rollouts
+  name: karpenter-resources
   namespace: argocd
 
 spec:
   project: default
 
   source:
-    repoURL: https://argoproj.github.io/argo-helm
-    chart: argo-rollouts
-    targetRevision: "2.40.5"
+    repoURL: https://github.com/Dhusinth/Project6-CloudOps-GitOps.git
+    targetRevision: main
+    path: Karpenter
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: argo-rollouts
+    namespace: karpenter
 
   syncPolicy:
     automated:
@@ -25,4 +25,3 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
-      

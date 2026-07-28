@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+
+metadata:
+  name: cloudops-success-rate
+
+spec:
+  metrics:
+    - name: success-rate
+
+      interval: 30s
+
+      successCondition: result[0] >= 0.95
+
+      failureLimit: 3
+
+      provider:
+        prometheus:
+          address: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+
+          query: |
+            sum(
+              rate(
+                cloudops_http_requests_total{status!~"5.."}[1m]
+              )
+            )
+            /
+            sum(
+              rate(
+                cloudops_http_requests_total[1m]
+              )
+            )
