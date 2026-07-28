@@ -5,22 +5,53 @@ metadata:
   name: cloudops-dashboard
 
 rules:
-  - apiGroups: [""]
-    resources:
-      - pods
-      - services
-      - namespaces
-      - nodes
-    verbs:
-      - get
-      - list
-      - watch
+- apiGroups: [""]
+  resources:
+    - pods
+    - services
+    - namespaces
+    - nodes
+    - configmaps
+    - events
+    - persistentvolumeclaims
+    - persistentvolumes
+    - secrets
+  verbs: ["get", "list", "watch"]
 
-  - apiGroups: ["apps"]
-    resources:
-      - deployments
-      - replicasets
-    verbs:
-      - get
-      - list
-      - watch
+- apiGroups: ["apps"]
+  resources:
+    - deployments
+    - replicasets
+    - statefulsets
+    - daemonsets
+  verbs: ["get", "list", "watch"]
+
+- apiGroups: ["batch"]
+  resources:
+    - jobs
+    - cronjobs
+  verbs: ["get", "list", "watch"]
+
+- apiGroups: ["networking.k8s.io"]
+  resources:
+    - ingresses
+    - networkpolicies
+  verbs: ["get", "list", "watch"]
+
+- apiGroups: ["storage.k8s.io"]
+  resources:
+    - storageclasses
+  verbs: ["get", "list", "watch"]
+
+- apiGroups: ["argoproj.io"]
+  resources:
+    - rollouts
+    - analyses
+    - experiments
+  verbs: ["get", "list", "watch"]
+
+- apiGroups: ["metrics.k8s.io"]
+  resources:
+    - pods
+    - nodes
+  verbs: ["get", "list", "watch"]
