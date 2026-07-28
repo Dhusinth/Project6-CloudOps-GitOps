@@ -82,6 +82,9 @@ spec:
             - name: REFRESH_INTERVAL
               value: {{ .Values.env.REFRESH_INTERVAL | quote }}
 
+            - name: K8S_MODE
+              value: "incluster"
+
           resources:
             requests:
               cpu: {{ .Values.resources.requests.cpu }}
