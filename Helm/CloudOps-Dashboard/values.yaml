@@ -2,8 +2,8 @@ replicaCount: 2
 
 image:
   repository: dhusinth123/cloudops-dashboard
-  tag: latest
-  pullPolicy: Always
+  tag: local
+  pullPolicy: IfNotPresent
 
 env:
   APP_VERSION: ""
@@ -40,9 +40,7 @@ securityContext:
 
 ingress:
   enabled: true
-
   className: alb
-
   host: ""
 
   annotations:
