@@ -26,4 +26,4 @@ spec:
       selfHeal: true # Automatically overwrites changes made manually to the cluster
     syncOptions:
       - CreateNamespace=true # Automatically creates the target namespace if missing
-
+      - ServerSideApply=true
