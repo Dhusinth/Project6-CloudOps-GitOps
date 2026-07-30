@@ -3,6 +3,7 @@ kind: EC2NodeClass
 
 metadata:
   name: default
+  namespace: karpenter
 
 spec:
   amiFamily: AL2023

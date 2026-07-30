@@ -3,6 +3,7 @@ kind: NodePool
 
 metadata:
   name: default
+  namespace: karpenter
 
 spec:
   template:
