@@ -33,6 +33,7 @@ spec:
       kind: Rollout
       jsonPointers:
         - /status
+        - /metadata/annotations/rollout.argoproj.io~1revision
       jqPathExpressions:
         - .spec.selector
         - .spec.template.metadata.labels
@@ -45,4 +46,5 @@ spec:
     - kind: Service
       name: cloudops-dashboard-canary
       jsonPointers:
+        - /spec/selector
         - /spec/selector
