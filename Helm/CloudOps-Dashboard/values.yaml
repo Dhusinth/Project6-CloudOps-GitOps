@@ -39,7 +39,7 @@ securityContext:
   allowPrivilegeEscalation: false
 
 ingress:
-  enabled: true
+  enabled: false
   className: alb
   host: ""
 
