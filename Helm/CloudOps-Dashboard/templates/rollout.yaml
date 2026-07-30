@@ -63,7 +63,8 @@ spec:
             allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
 
           ports:
-            - containerPort: {{ .Values.service.targetPort }}
+            - containerPort: 5000
+              protocol: TCP
 
           env:
             - name: APP_VERSION

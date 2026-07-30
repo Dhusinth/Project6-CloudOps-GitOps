@@ -34,9 +34,11 @@ spec:
       jsonPointers:
         - /status
         - /metadata/annotations/rollout.argoproj.io~1revision
+        - /spec/strategy/canary/analysis/analysisRunMetadata
       jqPathExpressions:
         - .spec.selector
         - .spec.template.metadata.labels
+        - .spec.template.spec.containers[].ports[].protocol
 
     - kind: Service
       name: cloudops-dashboard-stable
@@ -46,5 +48,4 @@ spec:
     - kind: Service
       name: cloudops-dashboard-canary
       jsonPointers:
-        - /spec/selector
         - /spec/selector
