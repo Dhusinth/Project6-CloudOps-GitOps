@@ -3,7 +3,7 @@ replicaCount: 2
 image:
   repository: dhusinth123/cloudops-dashboard
   tag: latest
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
 env:
   APP_VERSION: ""
