@@ -27,6 +27,7 @@ spec:
     syncOptions:
       - CreateNamespace=true # Automatically creates the target namespace if missing
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
 
   ignoreDifferences:
     - group: argoproj.io
