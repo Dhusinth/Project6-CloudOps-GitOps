@@ -27,3 +27,22 @@ spec:
     syncOptions:
       - CreateNamespace=true # Automatically creates the target namespace if missing
       - ServerSideApply=true
+
+  ignoreDifferences:
+    - group: argoproj.io
+      kind: Rollout
+      jsonPointers:
+        - /status
+      jqPathExpressions:
+        - .spec.selector
+        - .spec.template.metadata.labels
+
+    - kind: Service
+      name: cloudops-dashboard-stable
+      jsonPointers:
+        - /spec/selector
+
+    - kind: Service
+      name: cloudops-dashboard-canary
+      jsonPointers:
+        - /spec/selector
