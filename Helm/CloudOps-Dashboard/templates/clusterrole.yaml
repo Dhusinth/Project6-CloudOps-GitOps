@@ -55,3 +55,10 @@ rules:
     - pods
     - nodes
   verbs: ["get", "list", "watch"]
+
+- apiGroups: ["karpenter.sh"]
+  resources: ["nodepools", "nodeclaims"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["karpenter.k8s.aws"]
+  resources: ["ec2nodeclasses"]
+  verbs: ["get", "list", "watch"]
