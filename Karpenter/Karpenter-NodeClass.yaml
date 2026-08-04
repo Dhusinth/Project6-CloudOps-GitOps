@@ -3,10 +3,12 @@ kind: EC2NodeClass
 
 metadata:
   name: default
-  namespace: karpenter
 
 spec:
   amiFamily: AL2023
+
+  amiSelectorTerms:
+    - alias: al2023@latest
 
   role: project6-dev-node-role
 
