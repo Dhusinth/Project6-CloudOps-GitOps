@@ -1,10 +1,8 @@
 replicaCount: 2
-
 image:
   repository: dhusinth123/cloudops-dashboard
-  tag: latest
+  tag: 8cf19e7
   pullPolicy: IfNotPresent
-
 env:
   APP_VERSION: ""
   ENVIRONMENT: production
@@ -12,46 +10,35 @@ env:
   CLUSTER_NAME: project6-dev
   LOG_LEVEL: INFO
   REFRESH_INTERVAL: "30"
-
 service:
   type: ClusterIP
   port: 80
   targetPort: 5000
-
 serviceAccount:
   create: true
   name: cloudops-dashboard
   automount: true
   annotations: {}
-
 resources:
   requests:
     cpu: 250m
     memory: 256Mi
-
   limits:
     cpu: 500m
     memory: 512Mi
-
 securityContext:
   runAsNonRoot: true
   runAsUser: 1000
   allowPrivilegeEscalation: false
-
 ingress:
   enabled: true
   className: alb
   host: ""
-
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
-
     alb.ingress.kubernetes.io/target-type: ip
-
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
-
     alb.ingress.kubernetes.io/healthcheck-path: /health
-
 autoscaling:
   enabled: true
   minReplicas: 2
